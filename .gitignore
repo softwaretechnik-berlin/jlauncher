@@ -1,2 +1,13 @@
 target/
+.idea/
 .gitold/
+/launcher-gem/.bundle/
+/launcher-gem/.yardoc
+/launcher-gem/_yardoc/
+/launcher-gem/coverage/
+/launcher-gem/doc/
+/launcher-gem/pkg/
+/launcher-gem/spec/reports/
+/launcher-gem/tmp/
+release.sh
+*.sw*
