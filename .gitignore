@@ -9,5 +9,4 @@ target/
 /launcher-gem/pkg/
 /launcher-gem/spec/reports/
 /launcher-gem/tmp/
-release.sh
 *.sw*
