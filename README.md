@@ -21,7 +21,12 @@ Instead of the maven coordiantes you can also use the local path of a jar file:
     $ j target/j-maven-tester-1.jar
 
 
+
+
 ## Creating an executable jar with Maven
+
+
+
 
 To get started you need to add the plugin to your maven build and specify the main class:
 
@@ -51,10 +56,26 @@ To get started you need to add the plugin to your maven build and specify the ma
 ~~~
 
 
+# Creating an Executable Jar with SBT
+
+Include the plugin into your project/plugins.sbt
+
+~~~
+addSbtPlugin("org.programmiersportgruppe.sbt" % "jpackager" % "0.2")
+~~~
+
+Then add the following to your main module:
+
+~~~
+mainClass := Some("Main")
+
+resourceGenerators in Compile += generateManifast
+~~~
 
 
 ## TODO
 
+* [ ] Fix typo in SBT key
 * [ ] Add field for repositories in `manifest`, so that
       artifacts can be pulled in from arbitrary repos.
 * [ ] Make verbose mode beautiful, alignment, colours
