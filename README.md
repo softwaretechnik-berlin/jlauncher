@@ -56,6 +56,7 @@ To get started you need to add the plugin to your maven build and specify the ma
 ~~~
 
 
+
 # Creating an Executable Jar with SBT
 
 Include the plugin into your project/plugins.sbt
@@ -76,11 +77,13 @@ resourceGenerators in Compile += generateManifest
 ## TODO
 
 * [X] Fix typo in SBT key
+* [ ] Rename manifest file to be unique
 * [ ] Add field for repositories in `manifest`, so that
       artifacts can be pulled in from arbitrary repos.
 * [ ] Make verbose mode beautiful, alignment, colours
 * [ ] Add progress bar for fetching deps
 * [ ] Add size to dependencies (for better progress info)
+* [ ] Add vm version option
 * [ ] Add vm options to `manifest`
 * [ ] Make vm options overridable on the command line
 * [ ] Make repositories overridable/ allow to define bootstrap,
