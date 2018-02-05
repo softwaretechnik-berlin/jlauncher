@@ -69,13 +69,13 @@ Then add the following to your main module:
 ~~~
 mainClass := Some("Main")
 
-resourceGenerators in Compile += generateManifast
+resourceGenerators in Compile += generateManifest
 ~~~
 
 
 ## TODO
 
-* [ ] Fix typo in SBT key
+* [X] Fix typo in SBT key
 * [ ] Add field for repositories in `manifest`, so that
       artifacts can be pulled in from arbitrary repos.
 * [ ] Make verbose mode beautiful, alignment, colours

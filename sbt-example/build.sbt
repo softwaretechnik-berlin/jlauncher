@@ -25,7 +25,7 @@ version := "1.0"
 // You can define other libraries as dependencies in your build like this:
 libraryDependencies += "org.typelevel" %% "cats" % "0.9.0"
 mainClass := Some("Main")
-resourceGenerators in Compile += generateManifast
+resourceGenerators in Compile += generateManifest
 
 // Here, `libraryDependencies` is a set of dependencies, and by using `+=`,
 // we're adding the cats dependency to the set of dependencies that sbt will go

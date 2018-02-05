@@ -16,14 +16,15 @@ object JpackagerPlugin extends AutoPlugin {
   override def requires = JvmPlugin
 
   object autoImport {
-    val generateManifast: TaskKey[Seq[sbt.File]] = taskKey[Seq[File]]("A task that is automatically imported to the build")
+    // Perhaps this should not be inmported automatically
+    val generateManifest: TaskKey[Seq[sbt.File]] = taskKey[Seq[File]]("A task to generate an application manifest")
   }
 
   import autoImport._
 
   override lazy val projectSettings = Seq(
 
-    generateManifast := Def.task {
+    generateManifest := Def.task {
 
       val classpath: Seq[Attributed[File]] = Classpaths.managedJars(Compile, classpathTypes.value, update.value)
       val logger = sLog.value
