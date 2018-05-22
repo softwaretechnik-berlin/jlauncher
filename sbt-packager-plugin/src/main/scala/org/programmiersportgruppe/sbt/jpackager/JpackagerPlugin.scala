@@ -17,20 +17,19 @@ object JpackagerPlugin extends AutoPlugin {
 
   object autoImport {
     // Perhaps this should not be inmported automatically
-    val generateManifest: TaskKey[Seq[sbt.File]] = taskKey[Seq[File]]("A task to generate an application manifest")
+    val generateJManifest: TaskKey[Seq[sbt.File]] = taskKey[Seq[File]]("A task to generate an application manifest")
   }
 
   import autoImport._
 
   override lazy val projectSettings = Seq(
 
-    generateManifest := Def.task {
-
+    generateJManifest := Def.task {
       val classpath: Seq[Attributed[File]] = Classpaths.managedJars(Compile, classpathTypes.value, update.value)
       val logger = sLog.value
 
       val repos: Seq[String] = (fullResolvers in Compile).value.collect{case r: MavenRepo => r.root}
-      val deps: Seq[(Artifact, ModuleID)] = classpath.flatMap { entry =>
+      val deps: Seq[(Artifact, ModuleID, File)] = classpath.flatMap { entry =>
         for {
           art: Artifact <- entry.get(artifact.key)
           mod: ModuleID <- entry.get(moduleID.key)
@@ -51,7 +50,7 @@ object JpackagerPlugin extends AutoPlugin {
 
   override lazy val globalSettings = Seq()
 
-  def generateManifest(base: File, deps: Seq[(Artifact, ModuleID)], repos: Seq[String], mainClassName: String): Seq[File] = {
+  def generateManifest(base: File, deps: Seq[(Artifact, ModuleID, File)], repos: Seq[String], mainClassName: String): Seq[File] = {
 
     val path = new File(base, "j-manifest.json")
     base.mkdirs()
