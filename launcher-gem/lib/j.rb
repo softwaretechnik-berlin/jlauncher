@@ -40,7 +40,7 @@ where [options] are:
         resolver = Resolver.new(
             MavenRepo.new(File.join(Dir.home, ".m2", "repository")),
             IvyRepo.new(File.join(Dir.home, ".ivy2")),
-            MavenRemote.new("http://central.maven.org/maven2"),
+            MavenRemote.new("https://repo1.maven.org/maven2"),
             verbose
         )
 
