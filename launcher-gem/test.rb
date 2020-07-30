@@ -1,6 +1,6 @@
-require 'trollop'
+require 'optimist'
 
-parser = Trollop::Parser.new
+parser = Optimist::Parser.new
 
 
 # parser.ignore_invalid_options = true
@@ -24,7 +24,7 @@ puts opts
 puts "Hello"
 puts parser.leftovers
 
-Trollop::die :volume, "must be non-negative" if opts[:volume] < 0
-Trollop::die :file, "must exist" unless File.exist?(opts[:file]) if opts[:file]
+Optimist::die :volume, "must be non-negative" if opts[:volume] < 0
+Optimist::die :file, "must exist" unless File.exist?(opts[:file]) if opts[:file]
 
 

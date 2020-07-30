@@ -3,12 +3,12 @@ require 'zip'
 require 'json'
 require 'j/repos'
 require 'j/common.rb'
-require 'trollop'
+require 'optimist'
 
 module JLauncher
 
     def JLauncher.do_it(argv)
-        parser = Trollop::Parser.new
+        parser = Optimist::Parser.new
         parser.stop_on_unknown
         parser.version VERSION
         parser.banner <<-EOS
@@ -22,12 +22,12 @@ where [options] are:
 
         begin
             opts = parser.parse(argv)
-        rescue Trollop::CommandlineError => e
+        rescue Optimist::CommandlineError => e
             parser.die(e.message, nil, e.error_code)
-        rescue Trollop::HelpNeeded
+        rescue Optimist::HelpNeeded
             parser.educate
             exit
-        rescue Trollop::VersionNeeded
+        rescue Optimist::VersionNeeded
             puts parser.version
             exit
         end

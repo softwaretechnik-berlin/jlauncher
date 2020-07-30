@@ -4,7 +4,7 @@ PATH
     jlauncher (0.1.0)
       httparty
       rubyzip
-      trollop
+      optimist
 
 GEM
   remote: https://rubygems.org/
@@ -15,7 +15,7 @@ GEM
     multi_xml (0.6.0)
     rake (10.5.0)
     rubyzip (1.2.1)
-    trollop (2.1.2)
+    optimist (2.1.2)
 
 PLATFORMS
   ruby
