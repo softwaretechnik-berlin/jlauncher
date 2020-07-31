@@ -3,8 +3,8 @@ PATH
   specs:
     jlauncher (0.1.0)
       httparty
-      rubyzip
       optimist
+      rubyzip
 
 GEM
   remote: https://rubygems.org/
@@ -13,9 +13,9 @@ GEM
       multi_xml (>= 0.5.2)
     minitest (5.10.3)
     multi_xml (0.6.0)
+    optimist (3.0.1)
     rake (10.5.0)
-    rubyzip (1.2.1)
-    optimist (2.1.2)
+    rubyzip (2.3.0)
 
 PLATFORMS
   ruby
