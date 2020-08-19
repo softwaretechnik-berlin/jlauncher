@@ -18,7 +18,7 @@ GEM
     minitest (5.10.3)
     multi_xml (0.6.0)
     optimist (3.0.1)
-    rake (10.5.0)
+    rake (13.0.1)
     rubyzip (2.3.0)
 
 PLATFORMS
@@ -28,7 +28,7 @@ DEPENDENCIES
   bundler (~> 1.16)
   jlauncher!
   minitest (~> 5.0)
-  rake (~> 10.0)
+  rake (~> 13.0)
 
 BUNDLED WITH
    1.16.1
