@@ -2,6 +2,30 @@
 
 jlauncher fetches (executable) jar files and their dependencies from maven style repos and launches them.
 It uses a special manifest that locks down all dependency versions, so that the launch is repeatable.
+
+Here is an example manifest file:
+
+~~~json
+{
+    "mainClass": "org.programmiersportgruppe.jtester.App",
+    "dependencies": [{
+        "groupId": "com.beust",
+        "artifactId": "jcommander",
+        "version": "1.72"
+    },{
+        "groupId": "org.programmiersportgruppe",
+        "artifactId": "j-maven-tester",
+        "version": "1"
+    }]
+}
+~~~
+
+jlauncher can be used to launch this configuration:
+
+~~~
+j manifest.json --name Tom
+~~~
+
 There are Maven and SBT plugins to produce jars with a j-manifest.json file.
 
 ## Launching a jar from a repo

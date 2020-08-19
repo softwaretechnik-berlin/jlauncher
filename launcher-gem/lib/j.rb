@@ -15,7 +15,7 @@ module JLauncher
 Starts a jar with a j-manifest.json description fetching (and caching) all dependencies.
 
 Usage:
-.. j [options] <jarfile|mavencoordinates> args...
+.. j [options] <jarfile|manifestfile|mavencoordinates> args...
 where [options] are:
         EOS
         parser.opt :verbose, "Print debugging info to stderr"
@@ -45,11 +45,19 @@ where [options] are:
         )
 
         start_info = if File.file?(start_param)
+                       if (start_param.end_with?(".jar"))
                         STDERR.puts("Starting local jar") if verbose
 
                         manifest = read_manifest(start_param)
 
                         StartInfo.new(manifest.dependencies.map {|c| resolver.get(c)} << start_param, manifest.main_class)
+                       else
+                         STDERR.puts("Starting local manifest") if verbose
+
+                         manifest = Manifest.new(JSON.parse(File.read(start_param)))
+
+                         StartInfo.new(manifest.dependencies.map {|c| resolver.get(c)} << start_param, manifest.main_class)
+                       end
                      else
                          STDERR.puts("Starting from repo jar") if verbose
 
