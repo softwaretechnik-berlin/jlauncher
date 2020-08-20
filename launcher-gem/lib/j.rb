@@ -44,7 +44,7 @@ where [options] are:
             verbose
         )
 
-        start_info = if File.file?(start_param)
+        start_info = if File.exist?(start_param)
                        if (start_param.end_with?(".jar"))
                         STDERR.puts("Starting local jar") if verbose
 
