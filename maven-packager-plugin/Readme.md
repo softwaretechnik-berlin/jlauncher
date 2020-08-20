@@ -1,12 +1,11 @@
 # J Maven Plugin
 
-
 This plugin generates a j-manifest.json file for your project, so that the application
 can be started anywhere with the [`j`](https://github.com/programmiersportgruppe/j) utility.
 
 To get started you need to add the plugin to your maven build and specify the main class:
 
-~~~ .xml
+```.xml
 
  <build>
         <plugins>
@@ -29,6 +28,4 @@ To get started you need to add the plugin to your maven build and specify the ma
             </plugin>
         </plugins>
     </build>
-~~~
-
-
+```

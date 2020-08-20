@@ -7,20 +7,24 @@ into "fat jars". jlauncher fetches jar files and their dependencies from maven s
 
 The input is a special manifest that locks down all dependency versions, so that the launch is repeatable.
 
-Here is an example of such a manifest file:
+Here is an example of such a manifest file to launch a [helloworld example](maven-example/src/main/java/org/programmiersportgruppe/jtester/App.java)
+directly from maven central:
 
 ```json
 {
-    "mainClass": "org.programmiersportgruppe.jtester.App",
-    "dependencies": [{
-        "groupId": "com.beust",
-        "artifactId": "jcommander",
-        "version": "1.72"
-    },{
-        "groupId": "org.programmiersportgruppe",
-        "artifactId": "j-maven-tester",
-        "version": "1"
-    }]
+  "mainClass": "org.programmiersportgruppe.jtester.App",
+  "dependencies": [
+    {
+      "groupId": "com.beust",
+      "artifactId": "jcommander",
+      "version": "1.72"
+    },
+    {
+      "groupId": "org.programmiersportgruppe",
+      "artifactId": "j-maven-tester",
+      "version": "1"
+    }
+  ]
 }
 ```
 
@@ -30,18 +34,18 @@ Currently jlauncher is implemented in ruby and distributed as a ruby gem. The in
 gem install jlauncher
 ```
 
-The `j` command line tool can now be used to launch the manifest. The parameters after the manifest are 
-passed into the main class. 
+The `j` command line tool can now be used to launch the manifest. The parameters after the manifest are
+passed into the main class.
 
 ```bash
 j manifest.json --name Tom
 ```
 
-While one could create manifests manually this is can be automated using the maven / sbt plugin. Also, 
+While one could create manifests manually this is can be automated using the maven / sbt plugin. Also,
 the convention is to package a manifest as `j-manifest.json` into an "executable" jar.
- 
+
 Such a jar can then be launched like this:
- 
+
 ```bash
 j target/j-maven-tester-1.jar --name Jerry
 ```
@@ -98,14 +102,15 @@ resourceGenerators in Compile += generateManifest
 
 # Creating an Executable Jar with mill
 
-Mill currently doesn't have a plugin concept, so here we provide a snippet to generate a manifest (and package it 
+Mill currently doesn't have a plugin concept, so here we provide a snippet to generate a manifest (and package it
 into the jar):
+
 ```scala
 object mymodule extends SbtModule {
 
   // … Normal module definition stuff left out for clarity
 
-  // Include the manifest in the classpath so that it gets packaged:  
+  // Include the manifest in the classpath so that it gets packaged:
   override def localClasspath = T {super.localClasspath() ++ jManifest()}
 
   // The task to create the manifest:
@@ -137,27 +142,27 @@ object mymodule extends SbtModule {
 }
 ```
 
-
 ## Backlog
 
-* [X] Fix typo in SBT key.
-* [ ] Add field for repositories in `manifest`, so that
+- [x] Fix typo in SBT key.
+- [ ] Add field for repositories in `manifest`, so that
       artifacts can be pulled in from arbitrary repos.
-* [ ] Allow to specify vm version in the manifest.
-    
-    It would be nice to allow to specify version ranges, e.g. >= 9 
+- [ ] Allow to specify vm version in the manifest.
 
-    The launcher should be able to pick the right jvm if it can find 
-    it following platform conventions, e.g. doing a `/usr/libexec/java_home -X` on macOS.
-* [ ] Allow to specify vm options in the manifest.
-* [ ] Make vm options overridable on the command line.
-* [ ] Make repositories overridable/ allow to define bootstrap,
+  It would be nice to allow to specify version ranges, e.g. >= 9
+
+  The launcher should be able to pick the right jvm if it can find
+  it following platform conventions, e.g. doing a `/usr/libexec/java_home -X` on macOS.
+
+- [ ] Allow to specify vm options in the manifest.
+- [ ] Make vm options overridable on the command line.
+- [ ] Make repositories overridable/ allow to define bootstrap,
       repository, perhaps in a global config.
-* [ ] Have a way to add aliases/ wrapper scripts so that we can create an alias for a tool.
-* [ ] Reimplement jlauncher in go, so that we can have a small statically linked executable that is
+- [ ] Have a way to add aliases/ wrapper scripts so that we can create an alias for a tool.
+- [ ] Reimplement jlauncher in go, so that we can have a small statically linked executable that is
       more suitable for use in a docker container.
-* [ ] Add progress bar for fetching deps
-* [ ] Make verbose mode beautiful, alignment, colours
-* [ ] Add optional size to dependencies in manifest, so that we have more accurate progress info.
-* [ ] Support "LATEST" version when using maven coordinates (this should also work offline)
-* [ ] Bash completion (local or remote, caching) for maven coordinates. 
+- [ ] Add progress bar for fetching deps
+- [ ] Make verbose mode beautiful, alignment, colours
+- [ ] Add optional size to dependencies in manifest, so that we have more accurate progress info.
+- [ ] Support "LATEST" version when using maven coordinates (this should also work offline)
+- [ ] Bash completion (local or remote, caching) for maven coordinates.
