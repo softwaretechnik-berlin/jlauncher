@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+
+j <(cat <<EOF
+{
+    "mainClass": "org.programmiersportgruppe.jtester.App",
+    "dependencies": [{
+        "groupId": "com.beust",
+        "artifactId": "jcommander",
+        "version": "1.72"
+    },{
+        "groupId": "org.programmiersportgruppe",
+        "artifactId": "j-maven-tester",
+        "version": "1"
+    }]
+}
+EOF
+) "$@"
