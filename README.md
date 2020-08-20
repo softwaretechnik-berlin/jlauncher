@@ -1,5 +1,3 @@
-# jlauncher
-
 # Introduction
 
 jlauncher is a utility that makes it easy to run jvm based programs without having to assemble them
