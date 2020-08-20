@@ -1,11 +1,15 @@
 # jlauncher
 
-jlauncher fetches (executable) jar files and their dependencies from maven style repos and launches them.
-It uses a special manifest that locks down all dependency versions, so that the launch is repeatable.
+# Introduction
 
-Here is an example manifest file:
+jlauncher is a utility that makes it easy to run jvm based programs without having to assemble them
+into "fat jars". jlauncher fetches jar files and their dependencies from maven style repos and launches a main class.
 
-~~~json
+The input is a special manifest that locks down all dependency versions, so that the launch is repeatable.
+
+Here is an example of such a manifest file:
+
+```json
 {
     "mainClass": "org.programmiersportgruppe.jtester.App",
     "dependencies": [{
@@ -18,44 +22,41 @@ Here is an example manifest file:
         "version": "1"
     }]
 }
-~~~
+```
 
-jlauncher can be used to launch this configuration:
+Currently jlauncher is implemented in ruby and distributed as a ruby gem. The installation is straightforward:
 
-~~~
+```bash
+gem install jlauncher
+```
+
+The `j` command line tool can now be used to launch the manifest. The parameters after the manifest are 
+passed into the main class. 
+
+```bash
 j manifest.json --name Tom
-~~~
+```
 
-There are Maven and SBT plugins to produce jars with a j-manifest.json file.
+While one could create manifests manually this is can be automated using the maven / sbt plugin. Also, 
+the convention is to package a manifest as `j-manifest.json` into an "executable" jar.
+ 
+Such a jar can then be launched like this:
+ 
+```bash
+j target/j-maven-tester-1.jar --name Jerry
+```
 
-## Launching a jar from a repo
+If the jar is deployed to maven central we can also launch it using it's maven coordinates:
 
-Launching a jar is done with the `j` utility, which is distributed as a ruby gem. The installation
-is done like this:
+```bash
+j org.programmiersportgruppe:j-maven-tester:1 --name World
+```
 
-    $ gem install jlauncher
-
-Then you can launch a jar using its maven coordinates:
-
-    $ j org.programmiersportgruppe:j-maven-tester:1 --name World
-
-Instead of the maven coordiantes you can also use the local path of a jar file:
-
-
-    $ j target/j-maven-tester-1.jar
-
-
-
-
-## Creating an executable jar with Maven
-
-
-
+# Creating an executable jar with Maven
 
 To get started you need to add the plugin to your maven build and specify the main class:
 
-~~~ .xml
-
+```xml
  <build>
         <plugins>
 
@@ -77,41 +78,86 @@ To get started you need to add the plugin to your maven build and specify the ma
             </plugin>
         </plugins>
     </build>
-~~~
-
-
+```
 
 # Creating an Executable Jar with SBT
 
 Include the plugin into your project/plugins.sbt
 
-~~~
+```scala
 addSbtPlugin("org.programmiersportgruppe.sbt" % "jpackager" % "0.2")
-~~~
+```
 
 Then add the following to your main module:
 
-~~~
-mainClass := Some("Main")
+```scala
+mainClass := Some("org.programmiersportgruppe.App")
 
 resourceGenerators in Compile += generateManifest
-~~~
+```
+
+# Creating an Executable Jar with mill
+
+Mill currently doesn't have a plugin concept, so here we provide a snippet to generate a manifest (and package it 
+into the jar):
+```scala
+object mymodule extends SbtModule {
+
+  // … Normal module definition stuff left out for clarity
+
+  // Include the manifest in the classpath so that it gets packaged:  
+  override def localClasspath = T {super.localClasspath() ++ jManifest()}
+
+  // The task to create the manifest:
+  def jManifest: Target[Seq[PathRef]] = T {
+    os.makeDir.all(T.dest)
+    val (_, resolution) = Lib.resolveDependenciesMetadata(
+      repositories,
+      resolveCoursierDependency().apply(_),
+      transitiveIvyDeps(),
+      Some(mapDependencies())
+    )
+
+    val jsonManifest = ujson.write(
+      ujson.Obj(
+        "mainClass" -> ujson.Str(mainClass().get),
+        "dependencies" ->
+          resolution.dependencies.map(x =>
+            ujson.Obj(
+              "groupId" -> ujson.Str(x.module.organization.value),
+              "artifactId" -> ujson.Str(x.module.name.value),
+              "version" -> ujson.Str(x.version)
+            )
+        )), indent = 4)
+
+    os.write(T.dest / "j-manifest.json", jsonManifest)
+
+    Seq(PathRef(T.dest))
+  }
+}
+```
 
 
-## TODO
+## Backlog
 
-* [X] Fix typo in SBT key
-* [ ] Rename manifest file to be unique
+* [X] Fix typo in SBT key.
 * [ ] Add field for repositories in `manifest`, so that
       artifacts can be pulled in from arbitrary repos.
-* [ ] Make verbose mode beautiful, alignment, colours
-* [ ] Add progress bar for fetching deps
-* [ ] Add size to dependencies (for better progress info)
-* [ ] Add vm version option
-* [ ] Add vm options to `manifest`
-* [ ] Make vm options overridable on the command line
+* [ ] Allow to specify vm version in the manifest.
+    
+    It would be nice to allow to specify version ranges, e.g. >= 9 
+
+    The launcher should be able to pick the right jvm if it can find 
+    it following platform conventions, e.g. doing a `/usr/libexec/java_home -X` on macOS.
+* [ ] Allow to specify vm options in the manifest.
+* [ ] Make vm options overridable on the command line.
 * [ ] Make repositories overridable/ allow to define bootstrap,
-      repository, perhaps in a global config
-* [ ] Support "LATEST" version this should also work offline
-* [ ] Alias creation support
-* [ ] Bash completion (local or remote, caching)
+      repository, perhaps in a global config.
+* [ ] Have a way to add aliases/ wrapper scripts so that we can create an alias for a tool.
+* [ ] Reimplement jlauncher in go, so that we can have a small statically linked executable that is
+      more suitable for use in a docker container.
+* [ ] Add progress bar for fetching deps
+* [ ] Make verbose mode beautiful, alignment, colours
+* [ ] Add optional size to dependencies in manifest, so that we have more accurate progress info.
+* [ ] Support "LATEST" version when using maven coordinates (this should also work offline)
+* [ ] Bash completion (local or remote, caching) for maven coordinates. 
