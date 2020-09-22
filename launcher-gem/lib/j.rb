@@ -5,6 +5,7 @@ require 'j/repos'
 require 'j/common.rb'
 require 'optimist'
 require 'fileutils'
+require 'colorize'
 
 module JLauncher
 
@@ -56,6 +57,8 @@ where [options] are:
                     if (start_coordinates.end_with?(".jar"))
                       STDERR.puts("Starting local jar") if verbose
 
+                      start_coordinates = File.expand_path(start_coordinates)
+
                       extra_class_path = "file:" + File.expand_path(start_coordinates)
 
 
@@ -105,8 +108,9 @@ where [options] are:
         )
 
         File.chmod(0755, executable_path)
-
         check_path(bin_dir)
+
+        STDERR.puts("'#{start_coordinates}' has been installed as #{manifest.executable_name.bold}.")
       else
         raise "'#{subcommand}' is not a valid subcommand."
       end
@@ -116,8 +120,8 @@ where [options] are:
   def self.check_path(bin_dir)
     path_entries = ENV['PATH'].split(":").map{|path| File.expand_path(path)}
     if (!path_entries.include?(bin_dir))
-      STDERR.puts("Warning: The jlauncher binary path is not on the system path. You can add it to your .bashrc like so:")
-      STDERR.puts("export PATH=$PATH:#{bin_dir}")
+      STDERR.puts("Warning: The jlauncher binary path is not on the system path. You can add it to your .bashrc like so:".yellow)
+      STDERR.puts("export PATH=$PATH:#{bin_dir}\n\n")
     end
   end
 
@@ -177,7 +181,6 @@ where [options] are:
           @manifest.main_class
       )
     end
-
   end
 
 

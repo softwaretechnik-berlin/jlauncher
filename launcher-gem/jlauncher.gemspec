@@ -27,6 +27,7 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency "minitest", "~> 5.0"
 
   spec.add_dependency('optimist')
+  spec.add_dependency('colorize')
   spec.add_dependency('rubyzip')
   spec.add_dependency('httparty')
 end
