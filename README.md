@@ -156,7 +156,8 @@ object mymodule extends SbtModule {
 - [ ] Make vm options overridable on the command line.
 - [ ] Make repositories overridable/ allow to define bootstrap,
       repository, perhaps in a global config.
-- [ ] Have a way to add aliases/ wrapper scripts so that we can create an alias for a tool.
+- [X] Have a way to add aliases/ wrapper scripts so that we can create an alias for a tool.
+      => We can now install.
 - [ ] Reimplement jlauncher in go, so that we can have a small statically linked executable that is
       more suitable for use in a docker container.
 - [ ] Add progress bar for fetching deps
