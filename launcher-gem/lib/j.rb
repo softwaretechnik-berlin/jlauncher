@@ -7,119 +7,172 @@ require 'optimist'
 
 module JLauncher
 
-    def JLauncher.do_it(argv)
-        parser = Optimist::Parser.new
-        parser.stop_on_unknown
-        parser.version VERSION
-        parser.banner <<-EOS
+  def JLauncher.do_it(argv)
+    parser = Optimist::Parser.new
+    parser.stop_on_unknown
+    parser.stop_on %w(run install)
+    parser.version VERSION
+    parser.banner <<-EOS
 Starts a jar with a j-manifest.json description fetching (and caching) all dependencies.
 
 Usage:
-.. j [options] <jarfile|manifestfile|mavencoordinates> args...
+.. j [options] <run|install> <jarfile|manifestfile|mavencoordinates> args...
 where [options] are:
-        EOS
-        parser.opt :verbose, "Print debugging info to stderr"
+    EOS
+    parser.opt :verbose, "Print debugging info to stderr"
 
-        begin
-            opts = parser.parse(argv)
-        rescue Optimist::CommandlineError => e
-            parser.die(e.message, nil, e.error_code)
-        rescue Optimist::HelpNeeded
-            parser.educate
-            exit
-        rescue Optimist::VersionNeeded
-            puts parser.version
-            exit
-        end
+    begin
+      opts = parser.parse(argv)
+    rescue Optimist::CommandlineError => e
+      parser.die(e.message, nil, e.error_code)
+    rescue Optimist::HelpNeeded
+      parser.educate
+      exit
+    rescue Optimist::VersionNeeded
+      puts parser.version
+      exit
+    end
 
-        verbose = opts[:verbose]
-        remaining_args = parser.leftovers
-        start_param = remaining_args[0]
-        program_args = remaining_args[1..-1]
+    verbose = opts[:verbose]
 
-        resolver = Resolver.new(
-            MavenRepo.new(File.join(Dir.home, ".m2", "repository")),
-            IvyRepo.new(File.join(Dir.home, ".ivy2")),
-            MavenRemote.new("https://repo1.maven.org/maven2"),
-            verbose
-        )
+    remaining_args = parser.leftovers
 
-        start_info = if File.exist?(start_param)
-                       if (start_param.end_with?(".jar"))
+    subcommand = remaining_args.shift
+
+    start_coordinates = remaining_args.shift
+
+    program_args = remaining_args[1..-1]
+
+    resolver = Resolver.new(
+        MavenRepo.new(File.join(Dir.home, ".m2", "repository")),
+        IvyRepo.new(File.join(Dir.home, ".ivy2")),
+        MavenRemote.new("https://repo1.maven.org/maven2"),
+        verbose
+    )
+
+
+    full_config = if File.exist?(start_coordinates)
+                      if (start_coordinates.end_with?(".jar"))
                         STDERR.puts("Starting local jar") if verbose
 
-                        manifest = read_manifest(start_param)
+                        extra_class_path = "file:" + File.expand_path(start_coordinates)
 
-                        StartInfo.new(manifest.dependencies.map {|c| resolver.get(c)} << start_param, manifest.main_class)
-                       else
-                         STDERR.puts("Starting local manifest") if verbose
 
-                         manifest = Manifest.new(JSON.parse(File.read(start_param)))
+                        manifest = read_manifest(start_coordinates)
+                        FullConfig.new(manifest, extra_class_path)
+                      else
+                        STDERR.puts("Starting local manifest") if verbose
 
-                         StartInfo.new(manifest.dependencies.map {|c| resolver.get(c)} << start_param, manifest.main_class)
-                       end
-                     else
-                         STDERR.puts("Starting from repo jar") if verbose
+                        manifest = Manifest.new(JSON.parse(File.read(start_coordinates)))
 
-                         components = start_param.split(":")
-                         if components.length != 3
-                             raise "'#{start_param}' is not a valid coordinate use <groupId>:<artifactId>:<version>"
-                         end
+                        extra_class_path = NIL
+                        FullConfig.new(manifest, extra_class_path)
+                      end
+                    else
+                      STDERR.puts("Starting from repo jar") if verbose
 
-                         main_jar = resolver.get(Coordinates.new({
-                             'groupId' => components[0],
-                             'artifactId' => components[1],
-                             'version' => components[2]
-                         }))
+                      components = start_coordinates.split(":")
+                      if components.length != 3
+                        raise "'#{start_coordinates}' is not a valid coordinate use <groupId>:<artifactId>:<version>"
+                      end
 
-                         manifest = read_manifest(main_jar)
+                      main_jar = resolver.get(Coordinates.new(start_coordinates))
 
-                         StartInfo.new(manifest.dependencies.map {|c| resolver.get(c)} << main_jar, manifest.main_class)
+                      manifest = read_manifest(main_jar)
+                      extra_class_path = "maven:" + start_coordinates
+                      FullConfig.new(manifest, extra_class_path)
                     end
 
-        start_info.run(program_args)
-        
-        classpath = classpath_elements.join(File::PATH_SEPARATOR)
-        exec("java", "-cp", "#{classpath}", "#{manifest.main_class}")
+    if subcommand == "run"
+      launch_config = full_config.launch_config(resolver)
+
+      launch_config.run(program_args)
+    else if subcommand == "install"
+           STDERR.puts("Install is not supported yet.")
+         else
+           raise "'#{subcommand}' is not a valid subcommand."
+         end
     end
 
-    def self.read_manifest(jarfile)
-        Zip::File.open(jarfile) do |zip_file|
-            entry = zip_file.glob('j-manifest.json').first 
-            Manifest.new(JSON.parse(entry.get_input_stream.read))
-        end
+
+  end
+
+  def self.read_manifest(jarfile)
+    Zip::File.open(jarfile) do |zip_file|
+      entry = zip_file.glob('j-manifest.json').first
+      Manifest.new(JSON.parse(entry.get_input_stream.read))
+    end
+  end
+
+
+  # All the info that is needed to launch
+  class JvmLaunchConfig
+    def initialize(classpath_elements, main_class)
+
+      @main_class = main_class
+      @classpath_elements = classpath_elements
     end
 
+    def run(args)
+      classpath = @classpath_elements.join(File::PATH_SEPARATOR)
+      exec("java", "-cp", "#{classpath}", "#{@main_class}", *args)
+    end
 
-    # All the info that is needed to launch
-    class StartInfo
-        def initialize(classpath_elements, main_class)
+  end
 
-            @main_class = main_class
-            @classpath_elements = classpath_elements
-        end
-
-        def run(args)
-            classpath = @classpath_elements.join(File::PATH_SEPARATOR)
-            exec("java", "-cp", "#{classpath}", "#{@main_class}",  *args)
-        end
+  # The full configuratio needed to start a program has a manifest
+  # plus an optional extra_class_path element, which contains either
+  # maven coordinates or a local file containing a jar
+  class FullConfig
+    def initialize(manifest, extra_class_path)
+      @manifest = manifest
+      @extra_class_path = extra_class_path
 
     end
 
-    
-    # A wrapper around the manifest file
-    class Manifest
-        def initialize(json_map)
-            @json_map = json_map
-        end
+    def launch_config(resolver)
+      class_path_from_manifest = @manifest.dependencies.map {
+          |c| resolver.get(c)
+      }
 
-        def dependencies
-            @json_map['dependencies'].map {|dep| Coordinates.new(dep)}
+      if @extra_class_path
+        split_index = @extra_class_path.index(":")
+        protocol = @extra_class_path[0..split_index - 1]
+        value = @extra_class_path[split_index + 1..-1]
+        extra_element = case protocol
+        when "file"
+          value
+        when "maven"
+          resolver.get(Coordinates.new(value))
         end
+        class_path_from_manifest = class_path_from_manifest << extra_element
+      end
 
-        def main_class
-            @json_map['mainClass']
-        end
+      JvmLaunchConfig.new(
+          class_path_from_manifest,
+          @manifest.main_class
+      )
     end
+
+  end
+
+  # A wrapper around the manifest file
+  class Manifest
+    def initialize(json_map)
+      @json_map = json_map
+    end
+
+    def dependencies
+      @json_map['dependencies'].map { |dep| Coordinates.new(dep) }
+    end
+
+    def main_class
+      @json_map['mainClass']
+    end
+
+    def executable_name
+      @json_map['executableName']
+    end
+  end
 
 end

@@ -28,6 +28,12 @@ public class JMojo extends AbstractMojo {
 	@Parameter(property = "j.mainClass")
 	private String mainClass;
 
+	@Parameter(property = "j.executableName")
+	private String executableName;
+
+	@Parameter(property = "j.targetJvm")
+	private String targetJvm;
+
 	@Parameter(property = "j.outputDirectory", defaultValue = "${project.build.directory}/classes")
 	private String outputDirectory;
 
@@ -65,6 +71,14 @@ public class JMojo extends AbstractMojo {
                 .put("mainClass", getMainClass())
 				.put("dependencies", dependencies)
 				.put("repositories", new JSONArray(repos.map(r -> r.getUrl())));
+
+			if (executableName != null) {
+				metadata.put("executableName", executableName);
+			}
+
+			if (targetJvm != null) {
+				metadata.put("targetJvm", targetJvm);
+			}
 
 			FileUtils.forceMkdir(new File(outputDirectory));
 			FileUtils.write(new File(new File(outputDirectory),"j-manifest.json"), metadata.toString(4));

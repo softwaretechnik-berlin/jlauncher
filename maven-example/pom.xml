@@ -72,6 +72,7 @@
                 </executions>
                 <configuration>
                     <mainClass>org.programmiersportgruppe.jtester.App</mainClass>
+                    <executableName>hello-world</executableName>
                 </configuration>
             </plugin>
         </plugins>
