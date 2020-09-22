@@ -4,6 +4,7 @@ require 'json'
 require 'j/repos'
 require 'j/common.rb'
 require 'optimist'
+require 'fileutils'
 
 module JLauncher
 
@@ -52,49 +53,72 @@ where [options] are:
 
 
     full_config = if File.exist?(start_coordinates)
-                      if (start_coordinates.end_with?(".jar"))
-                        STDERR.puts("Starting local jar") if verbose
+                    if (start_coordinates.end_with?(".jar"))
+                      STDERR.puts("Starting local jar") if verbose
 
-                        extra_class_path = "file:" + File.expand_path(start_coordinates)
+                      extra_class_path = "file:" + File.expand_path(start_coordinates)
 
 
-                        manifest = read_manifest(start_coordinates)
-                        FullConfig.new(manifest, extra_class_path)
-                      else
-                        STDERR.puts("Starting local manifest") if verbose
-
-                        manifest = Manifest.new(JSON.parse(File.read(start_coordinates)))
-
-                        extra_class_path = NIL
-                        FullConfig.new(manifest, extra_class_path)
-                      end
+                      manifest = read_manifest(start_coordinates)
+                      FullConfig.new(manifest, extra_class_path)
                     else
-                      STDERR.puts("Starting from repo jar") if verbose
+                      STDERR.puts("Starting local manifest") if verbose
 
-                      components = start_coordinates.split(":")
-                      if components.length != 3
-                        raise "'#{start_coordinates}' is not a valid coordinate use <groupId>:<artifactId>:<version>"
-                      end
+                      manifest = Manifest.new(JSON.parse(File.read(start_coordinates)))
 
-                      main_jar = resolver.get(Coordinates.new(start_coordinates))
-
-                      manifest = read_manifest(main_jar)
-                      extra_class_path = "maven:" + start_coordinates
+                      extra_class_path = NIL
                       FullConfig.new(manifest, extra_class_path)
                     end
+                  else
+                    STDERR.puts("Starting from repo jar") if verbose
+
+                    components = start_coordinates.split(":")
+                    if components.length != 3
+                      raise "'#{start_coordinates}' is not a valid coordinate use <groupId>:<artifactId>:<version>"
+                    end
+
+                    main_jar = resolver.get(Coordinates.new(start_coordinates))
+
+                    manifest = read_manifest(main_jar)
+                    extra_class_path = "maven:" + start_coordinates
+                    FullConfig.new(manifest, extra_class_path)
+                  end
 
     if subcommand == "run"
       launch_config = full_config.launch_config(resolver)
 
       launch_config.run(program_args)
-    else if subcommand == "install"
-           STDERR.puts("Install is not supported yet.")
-         else
-           raise "'#{subcommand}' is not a valid subcommand."
-         end
+    else
+      if subcommand == "install"
+        bin_dir = File.expand_path("~/.config/jlauncher/bin")
+        executable_path = bin_dir + "/" + (manifest.executable_name || "testme")
+        FileUtils.mkdir_p(bin_dir)
+        File.write(executable_path, <<~HEREDOC
+        #!/usr/bin/env bash        
+        
+        set -e
+        set -u
+        set -o pipefail
+
+        j run #{start_coordinates} "$@"
+        HEREDOC
+        )
+
+        File.chmod(0755, executable_path)
+
+        check_path(bin_dir)
+      else
+        raise "'#{subcommand}' is not a valid subcommand."
+      end
     end
+  end
 
-
+  def self.check_path(bin_dir)
+    path_entries = ENV['PATH'].split(":").map{|path| File.expand_path(path)}
+    if (!path_entries.include?(bin_dir))
+      STDERR.puts("Warning: The jlauncher binary path is not on the system path. You can add it to your .bashrc like so:")
+      STDERR.puts("export PATH=$PATH:#{bin_dir}")
+    end
   end
 
   def self.read_manifest(jarfile)
@@ -117,8 +141,8 @@ where [options] are:
       classpath = @classpath_elements.join(File::PATH_SEPARATOR)
       exec("java", "-cp", "#{classpath}", "#{@main_class}", *args)
     end
-
   end
+
 
   # The full configuratio needed to start a program has a manifest
   # plus an optional extra_class_path element, which contains either
@@ -140,11 +164,11 @@ where [options] are:
         protocol = @extra_class_path[0..split_index - 1]
         value = @extra_class_path[split_index + 1..-1]
         extra_element = case protocol
-        when "file"
-          value
-        when "maven"
-          resolver.get(Coordinates.new(value))
-        end
+                        when "file"
+                          value
+                        when "maven"
+                          resolver.get(Coordinates.new(value))
+                        end
         class_path_from_manifest = class_path_from_manifest << extra_element
       end
 
@@ -155,6 +179,7 @@ where [options] are:
     end
 
   end
+
 
   # A wrapper around the manifest file
   class Manifest
@@ -174,5 +199,4 @@ where [options] are:
       @json_map['executableName']
     end
   end
-
 end
