@@ -32,11 +32,11 @@ Currently jlauncher is implemented in ruby and distributed as a ruby gem. The in
 gem install jlauncher
 ```
 
-The `j` command line tool can now be used to launch the manifest. The parameters after the manifest are
+The `jlauncher` command line tool can now be used to launch the manifest. The parameters after the manifest are
 passed into the main class.
 
 ```bash
-j manifest.json --name Tom
+jlauncher run manifest.json --name Tom
 ```
 
 While one could create manifests manually this is can be automated using the maven / sbt plugin. Also,
@@ -45,13 +45,13 @@ the convention is to package a manifest as `j-manifest.json` into an "executable
 Such a jar can then be launched like this:
 
 ```bash
-j target/j-maven-tester-1.jar --name Jerry
+jlauncher run target/j-maven-tester-1.jar --name Jerry
 ```
 
 If the jar is deployed to maven central we can also launch it using it's maven coordinates:
 
 ```bash
-j org.programmiersportgruppe:j-maven-tester:1 --name World
+jlauncher run org.programmiersportgruppe:j-maven-tester:1 --name World
 ```
 
 # Creating an executable jar with Maven

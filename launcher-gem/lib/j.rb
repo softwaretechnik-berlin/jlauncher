@@ -52,7 +52,6 @@ where [options] are:
         verbose
     )
 
-
     full_config = if File.exist?(start_coordinates)
                     if (start_coordinates.end_with?(".jar"))
                       STDERR.puts("Starting local jar") if verbose

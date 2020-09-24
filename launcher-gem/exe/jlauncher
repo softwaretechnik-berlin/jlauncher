@@ -1,4 +1,4 @@
 #!/usr/bin/env ruby
-require 'j'
+require 'jlauncher'
 
 JLauncher.do_it(ARGV)

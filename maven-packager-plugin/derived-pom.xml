@@ -3,7 +3,7 @@
 
 	<groupId>org.buildobjects</groupId>
 	<artifactId>j-maven-plugin</artifactId>
-	<version>0.1</version>
+	<version>0.2.0</version>
 	<packaging>maven-plugin</packaging>
 	<name>J Maven Plugin</name>
 	<description>Maven plugin that produces a j-manifest</description>
