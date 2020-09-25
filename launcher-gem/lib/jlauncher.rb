@@ -1,8 +1,8 @@
-require "j/version"
+require "jlauncher/version"
 require 'zip'
 require 'json'
-require 'j/repos'
-require 'j/common.rb'
+require 'jlauncher/repos'
+require 'jlauncher/common.rb'
 require 'optimist'
 require 'fileutils'
 require 'colorize'
@@ -43,7 +43,7 @@ where [options] are:
 
     start_coordinates = remaining_args.shift
 
-    program_args = remaining_args[1..-1]
+    program_args = remaining_args[0..-1]
 
     resolver = Resolver.new(
         MavenRepo.new(File.join(Dir.home, ".m2", "repository")),

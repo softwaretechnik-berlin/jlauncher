@@ -1,7 +1,6 @@
-
 lib = File.expand_path("../lib", __FILE__)
 $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
-require "j/version"
+require "jlauncher/version"
 
 Gem::Specification.new do |spec|
   spec.name          = "jlauncher"
@@ -11,7 +10,7 @@ Gem::Specification.new do |spec|
 
   spec.summary       = %q{Launches jvm software from central repos}
   spec.description   = %q{Uses fully resolved dependencies to get and start software from central repos}
-  spec.homepage      = "https://wuetender-junger-mann.de"
+  spec.homepage      = "https://github.com/softwaretechnik-berlin/jlauncher"
   spec.license       = "MIT"
 
   

@@ -5,7 +5,17 @@ into "fat jars". jlauncher fetches jar files and their dependencies from maven s
 
 The input is a special manifest that locks down all dependency versions, so that the launch is repeatable.
 
-Here is an example of such a manifest file to launch a [helloworld example](maven-example/src/main/java/org/programmiersportgruppe/jtester/App.java)
+# Installing jlauncher
+
+Currently jlauncher is implemented in ruby and distributed as a ruby gem. The installation is straightforward:
+
+```bash
+gem install jlauncher
+```
+
+# Launching a Local Manifest File
+
+Here is an example of a manifest file to launch a [helloworld example](maven-example/src/main/java/org/programmiersportgruppe/jtester/App.java)
 directly from maven central:
 
 ```json
@@ -20,16 +30,10 @@ directly from maven central:
     {
       "groupId": "org.programmiersportgruppe",
       "artifactId": "j-maven-tester",
-      "version": "1"
+      "version": "0.2.0"
     }
   ]
 }
-```
-
-Currently jlauncher is implemented in ruby and distributed as a ruby gem. The installation is straightforward:
-
-```bash
-gem install jlauncher
 ```
 
 The `jlauncher` command line tool can now be used to launch the manifest. The parameters after the manifest are
@@ -39,19 +43,45 @@ passed into the main class.
 jlauncher run manifest.json --name Tom
 ```
 
-While one could create manifests manually this is can be automated using the maven / sbt plugin. Also,
-the convention is to package a manifest as `j-manifest.json` into an "executable" jar.
+While manifest can be created manually,
+this process can be automated using the maven / sbt plugin. Also,
+the convention is to package a manifest as `j-manifest.json` into an 
+"executable" jar.
 
-Such a jar can then be launched like this:
+# Launching from a Local Jar-File
+
+A jar file containing a j-manifest can then be launched like this:
 
 ```bash
-jlauncher run target/j-maven-tester-1.jar --name Jerry
+jlauncher run target/j-maven-tester-0.2.0.jar --name Jerry
 ```
 
-If the jar is deployed to maven central we can also launch it using it's maven coordinates:
+# Launching from Maven Coordinates
+
+If the jar is deployed to maven central we can also launch it using its maven coordinates:
 
 ```bash
-jlauncher run org.programmiersportgruppe:j-maven-tester:1 --name World
+jlauncher run org.programmiersportgruppe:j-maven-tester:0.2.0 --name World
+```
+
+# Installing a Wrapper Script
+
+jlauncher also supports the installation of a wrapper script,
+in the jlauncher `bin`-directory, so that a utiltiy packaged
+with jlauncher manifest can be started with a simple script name.
+
+If we take our previous hello world example, we can install it 
+like so:
+
+```bash
+jlauncher install org.programmiersportgruppe:j-maven-tester:0.2.0
+```
+ 
+With the jlauncher `bin`-directory on the path we can now start
+hello world like this:
+
+```bash
+hello-world --name Donald
 ```
 
 # Creating an executable jar with Maven
@@ -65,7 +95,7 @@ To get started you need to add the plugin to your maven build and specify the ma
             <plugin>
                 <groupId>org.buildobjects</groupId>
                 <artifactId>j-maven-plugin</artifactId>
-                <version>0.2</version>
+                <version>0.2.0</version>
                 <executions>
                     <execution>
                         <phase>generate-resources</phase>
@@ -76,6 +106,7 @@ To get started you need to add the plugin to your maven build and specify the ma
                 </executions>
                 <configuration>
                     <mainClass>org.programmiersportgruppe.App</mainClass>
+                    <executableName>hello-world</executableName>
                 </configuration>
             </plugin>
         </plugins>
@@ -124,6 +155,7 @@ object mymodule extends SbtModule {
     val jsonManifest = ujson.write(
       ujson.Obj(
         "mainClass" -> ujson.Str(mainClass().get),
+        "executableName" -> ujson.Str("hello-world"),
         "dependencies" ->
           resolution.dependencies.map(x =>
             ujson.Obj(
@@ -143,6 +175,8 @@ object mymodule extends SbtModule {
 ## Backlog
 
 - [x] Fix typo in SBT key.
+- [ ] Make repositories overridable/ allow to define bootstrap,
+      repository, perhaps in a global config.
 - [ ] Add field for repositories in `manifest`, so that
       artifacts can be pulled in from arbitrary repos.
 - [ ] Allow to specify vm version in the manifest.
@@ -154,8 +188,6 @@ object mymodule extends SbtModule {
 
 - [ ] Allow to specify vm options in the manifest.
 - [ ] Make vm options overridable on the command line.
-- [ ] Make repositories overridable/ allow to define bootstrap,
-      repository, perhaps in a global config.
 - [X] Have a way to add aliases/ wrapper scripts so that we can create an alias for a tool.
       => We can now install.
 - [ ] Reimplement jlauncher in go, so that we can have a small statically linked executable that is
