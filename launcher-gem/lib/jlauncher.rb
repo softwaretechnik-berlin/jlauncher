@@ -102,7 +102,7 @@ where [options] are:
         set -u
         set -o pipefail
 
-        j run #{start_coordinates} "$@"
+        jlauncher run #{start_coordinates} "$@"
         HEREDOC
         )
 
@@ -147,7 +147,7 @@ where [options] are:
   end
 
 
-  # The full configuratio needed to start a program has a manifest
+  # The full configuration needed to start a program has a manifest
   # plus an optional extra_class_path element, which contains either
   # maven coordinates or a local file containing a jar
   class FullConfig
