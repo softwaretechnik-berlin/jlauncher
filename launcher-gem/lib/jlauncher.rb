@@ -41,9 +41,6 @@ where [options] are:
 
     subcommand = remaining_args.shift
 
-    start_coordinates = remaining_args.shift
-
-    program_args = remaining_args[0..-1]
 
     resolver = Resolver.new(
         MavenRepo.new(File.join(Dir.home, ".m2", "repository")),
@@ -52,64 +49,59 @@ where [options] are:
         verbose
     )
 
-    full_config = if File.exist?(start_coordinates)
-                    if (start_coordinates.end_with?(".jar"))
-                      STDERR.puts("Starting local jar") if verbose
-
-                      start_coordinates = File.expand_path(start_coordinates)
-
-                      extra_class_path = "file:" + File.expand_path(start_coordinates)
-
-
-                      manifest = read_manifest(start_coordinates)
-                      FullConfig.new(manifest, extra_class_path)
-                    else
-                      STDERR.puts("Starting local manifest") if verbose
-
-                      manifest = Manifest.new(JSON.parse(File.read(start_coordinates)))
-
-                      extra_class_path = NIL
-                      FullConfig.new(manifest, extra_class_path)
-                    end
-                  else
-                    STDERR.puts("Starting from repo jar") if verbose
-
-                    components = start_coordinates.split(":")
-                    if components.length != 3
-                      raise "'#{start_coordinates}' is not a valid coordinate use <groupId>:<artifactId>:<version>"
-                    end
-
-                    main_jar = resolver.get(Coordinates.new(start_coordinates))
-
-                    manifest = read_manifest(main_jar)
-                    extra_class_path = "maven:" + start_coordinates
-                    FullConfig.new(manifest, extra_class_path)
-                  end
 
     if subcommand == "run"
+      start_coordinates = remaining_args.shift
+
+      full_config = resolve_full_config(resolver, start_coordinates, verbose)
+
+      program_args = remaining_args[0..-1]
+
       launch_config = full_config.launch_config(resolver)
 
       launch_config.run(program_args)
     else
       if subcommand == "install"
+        subcommand_parser = Optimist::Parser.new
+        subcommand_parser.opt :executable_name, "Name of the executable script.", :type => :string
+
+        begin
+          opts = subcommand_parser.parse(remaining_args)
+        rescue Optimist::HelpNeeded
+          subcommand_parser.educate
+          exit
+        end
+
+        start_coordinates = subcommand_parser.leftovers.first
+
+        full_config = resolve_full_config(resolver, start_coordinates, verbose)
+
+        executable_name = full_config.manifest.executable_name || opts[:executable_name]
+
+        if !executable_name
+          raise "Manifest does not contain executable name, please specify one on the commandline like so:\n" +
+                    "jlauncher install --executable-name myexecutablename #{full_config.start_coordinates}"
+        end
+
         bin_dir = File.expand_path("~/.config/jlauncher/bin")
-        executable_path = bin_dir + "/" + (manifest.executable_name || "testme")
+
+        executable_path = bin_dir + "/" + (executable_name)
         FileUtils.mkdir_p(bin_dir)
         File.write(executable_path, <<~HEREDOC
-        #!/usr/bin/env bash        
-        
-        set -e
-        set -u
-        set -o pipefail
+          #!/usr/bin/env bash        
 
-        jlauncher run #{start_coordinates} "$@"
+          set -e
+          set -u
+          set -o pipefail
+
+          jlauncher run #{full_config.start_coordinates} "$@"
         HEREDOC
         )
 
         File.chmod(0755, executable_path)
         check_path(bin_dir)
 
-        STDERR.puts("'#{start_coordinates}' has been installed as #{manifest.executable_name.bold}.")
+        STDERR.puts("'#{full_config.start_coordinates}' has been installed as #{executable_name.bold}.")
       else
         raise "'#{subcommand}' is not a valid subcommand."
       end
@@ -117,7 +109,7 @@ where [options] are:
   end
 
   def self.check_path(bin_dir)
-    path_entries = ENV['PATH'].split(":").map{|path| File.expand_path(path)}
+    path_entries = ENV['PATH'].split(":").map { |path| File.expand_path(path) }
     if (!path_entries.include?(bin_dir))
       STDERR.puts("Warning: The jlauncher binary path is not on the system path. You can add it to your .bashrc like so:".yellow)
       STDERR.puts("export PATH=$PATH:#{bin_dir}\n\n")
@@ -151,11 +143,15 @@ where [options] are:
   # plus an optional extra_class_path element, which contains either
   # maven coordinates or a local file containing a jar
   class FullConfig
-    def initialize(manifest, extra_class_path)
+    attr_reader :manifest, :start_coordinates
+
+    def initialize(manifest, extra_class_path, start_coordinates)
       @manifest = manifest
       @extra_class_path = extra_class_path
+      @start_coordinates = start_coordinates
 
     end
+
 
     def launch_config(resolver)
       class_path_from_manifest = @manifest.dependencies.map {
@@ -200,5 +196,44 @@ where [options] are:
     def executable_name
       @json_map['executableName']
     end
+  end
+
+  private
+
+  def self.resolve_full_config(resolver, start_coordinates, verbose)
+    full_config = if File.exist?(start_coordinates)
+                    if (start_coordinates.end_with?(".jar"))
+                      STDERR.puts("Starting local jar") if verbose
+
+                      start_coordinates = File.expand_path(start_coordinates)
+
+                      extra_class_path = "file:" + File.expand_path(start_coordinates)
+
+
+                      manifest = read_manifest(start_coordinates)
+                      FullConfig.new(manifest, extra_class_path, start_coordinates)
+                    else
+                      STDERR.puts("Starting local manifest") if verbose
+
+                      manifest = Manifest.new(JSON.parse(File.read(start_coordinates)))
+
+                      extra_class_path = nil
+                      FullConfig.new(manifest, extra_class_path, start_coordinates)
+                    end
+                  else
+                    STDERR.puts("Starting from repo jar") if verbose
+
+                    components = start_coordinates.split(":")
+                    if components.length != 3
+                      raise "'#{start_coordinates}' is not a valid coordinate use <groupId>:<artifactId>:<version>"
+                    end
+
+                    main_jar = resolver.get(Coordinates.new(start_coordinates))
+
+                    manifest = read_manifest(main_jar)
+                    extra_class_path = "maven:" + start_coordinates
+                    FullConfig.new(manifest, extra_class_path, start_coordinates)
+                  end
+    full_config
   end
 end
